@@ -24,9 +24,11 @@ jobs:
           HARBOR_PASSWORD: ${{ secrets.HARBOR_PASSWORD }}
 
       - name: Build Docker image
+        working-directory: n-api
         run: |
           docker build -t harbor.zatto-lab.cloud/topsky/napi:${{ github.ref_name }} .
 
       - name: Push to Harbor
+        working-directory: n-api
         run: |
           docker push harbor.zatto-lab.cloud/topsky/napi:${{ github.ref_name }}
