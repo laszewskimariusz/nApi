@@ -23,16 +23,16 @@ jobs:
           HARBOR_USERNAME: ${{ secrets.HARBOR_USERNAME }}
           HARBOR_PASSWORD: ${{ secrets.HARBOR_PASSWORD }}
 
-      - name: Build Docker image
+      - name: Build Docker image with Buildx
         working-directory: n-api
         run: |
           docker buildx build \
-            --build-arg MONGODB_URI=${{ secrets.MONGODB_URI }} \
-            --build-arg NEWSKY_API_KEY=${{ secrets.NEWSKY_API_KEY }} \
+            --load \
+            --build-arg MONGODB_URI="${{ secrets.MONGODB_URI }}" \
+            --build-arg NEWSKY_API_KEY="${{ secrets.NEWSKY_API_KEY }}" \
             -t harbor.zatto-lab.cloud/napi/napi:${{ github.ref_name }} \
-            --load .
+            .
 
-      - name: Push to Harbor
+      - name: Push Docker image
         working-directory: n-api
-        run: |
-          docker push harbor.zatto-lab.cloud/napi/napi:${{ github.ref_name }}
+        run: docker push harbor.zatto-lab.cloud/napi/napi:${{ github.ref_name }}
