@@ -41,7 +41,7 @@ jobs:
       - name: Checkout argo-manifest repo
         uses: actions/checkout@v3
         with:
-          repository: zatto-lab/argo-manifest
+          repository: laszewskimariusz/argo-manifest
           token: ${{ secrets.GH_PAT }}
           path: argo-manifest
 
