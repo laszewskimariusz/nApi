@@ -9,9 +9,6 @@ export async function GET() {
 
     return NextResponse.json({ count })
   } catch (error) {
-    return NextResponse.json(
-      { error: "Could not fetch flight count", message: String(error) },
-      { status: 500 }
-    )
+    return NextResponse.json({ error: "Could not fetch flight count", message: String(error) }, { status: 500 })
   }
 }
