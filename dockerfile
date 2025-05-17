@@ -1,19 +1,20 @@
-# --- Build stage
-FROM node:18-alpine AS builder
-
+# === Base stage ===
+FROM node:18-alpine AS base
 WORKDIR /app
-COPY . .
-
+COPY package*.json ./
 RUN npm install
+
+# === Build stage ===
+FROM base AS builder
+COPY . .
 RUN npm run build
 
-# --- Production image
+# === Production stage ===
 FROM node:18-alpine AS runner
-
 WORKDIR /app
-COPY --from=builder /app .
 
-ENV NODE_ENV=production
+ENV NODE_ENV production
+COPY --from=builder /app ./
+
 EXPOSE 3000
-
 CMD ["npm", "start"]
