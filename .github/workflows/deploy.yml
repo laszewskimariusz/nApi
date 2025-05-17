@@ -25,10 +25,11 @@ jobs:
 
       - name: Build Docker image
         working-directory: n-api
-        run: docker build \
-          --build-arg MONGODB_URI=${{ secrets.MONGODB_URI }} \
-          --build-arg NEWSKY_API_KEY=${{ secrets.NEWSKY_API_KEY }} \
-          -t harbor.zatto-lab.cloud/topsky/napi:${{ github.ref_name }} .
+        run: |
+          docker build \
+            --build-arg MONGODB_URI=${{ secrets.MONGODB_URI }} \
+            --build-arg NEWSKY_API_KEY=${{ secrets.NEWSKY_API_KEY }} \
+            -t harbor.zatto-lab.cloud/topsky/napi:${{ github.ref_name }} .
 
       - name: Push to Harbor
         working-directory: n-api
