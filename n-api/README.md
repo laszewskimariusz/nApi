@@ -1,5 +1,5 @@
 This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
-
+[![Update ArgoCD Manifest Repo](https://github.com/laszewskimariusz/nApi/actions/workflows/deploy.yml/badge.svg)](https://github.com/laszewskimariusz/nApi/actions/workflows/deploy.yml)
 ## Getting Started
 
 First, run the development server:
