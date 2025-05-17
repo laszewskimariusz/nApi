@@ -9,9 +9,8 @@ export async function GET() {
 
     return NextResponse.json({ count })
   } catch (error) {
-    console.error("❌ Error in /api/flights/count:", error)
     return NextResponse.json(
-      { error: "Internal Server Error", details: String(error) },
+      { error: "Could not fetch flight count", message: String(error) },
       { status: 500 }
     )
   }
