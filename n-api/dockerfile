@@ -6,14 +6,26 @@ RUN npm install
 
 # === Build stage ===
 FROM base AS builder
+WORKDIR /app
 COPY . .
+
+# Te zmienne będą dostępne w czasie budowania aplikacji (np. do getStaticProps lub env-based configów)
+ARG MONGODB_URI
+ARG NEWSKY_API_KEY
+
+ENV MONGODB_URI=$MONGODB_URI
+ENV NEWSKY_API_KEY=$NEWSKY_API_KEY
+
 RUN npm run build
 
 # === Production stage ===
 FROM node:18-alpine AS runner
 WORKDIR /app
 
-ENV NODE_ENV production
+ENV NODE_ENV=production
+ENV MONGODB_URI=$MONGODB_URI
+ENV NEWSKY_API_KEY=$NEWSKY_API_KEY
+
 COPY --from=builder /app ./
 
 EXPOSE 3000
