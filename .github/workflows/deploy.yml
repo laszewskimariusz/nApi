@@ -1,9 +1,9 @@
-name: Deploy to Harbor Registry
+name: Update ArgoCD Manifest Repo
 
 on:
   push:
     tags:
-      - '*' # trigger only on version tags
+      - '*'  # Trigger only on version tags
 
 jobs:
   docker:
@@ -11,8 +11,12 @@ jobs:
     environment: HARBOR
 
     steps:
-      - name: Checkout code
+      - name: Checkout source repo (n-api)
         uses: actions/checkout@v3
+
+      - name: Extract tag
+        id: vars
+        run: echo "TAG=${GITHUB_REF#refs/tags/}" >> $GITHUB_ENV
 
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v2
@@ -23,16 +27,32 @@ jobs:
           HARBOR_USERNAME: ${{ secrets.HARBOR_USERNAME }}
           HARBOR_PASSWORD: ${{ secrets.HARBOR_PASSWORD }}
 
-      - name: Build Docker image with Buildx
+      - name: Build and Push Docker image
         working-directory: n-api
         run: |
           docker buildx build \
             --load \
             --build-arg MONGODB_URI="${{ secrets.MONGODB_URI }}" \
             --build-arg NEWSKY_API_KEY="${{ secrets.NEWSKY_API_KEY }}" \
-            -t harbor.zatto-lab.cloud/napi/napi:${{ github.ref_name }} \
+            -t harbor.zatto-lab.cloud/napi/napi:${{ env.TAG }} \
             .
+          docker push harbor.zatto-lab.cloud/napi/napi:${{ env.TAG }}
 
-      - name: Push Docker image
-        working-directory: n-api
-        run: docker push harbor.zatto-lab.cloud/napi/napi:${{ github.ref_name }}
+      - name: Checkout argo-manifest repo
+        uses: actions/checkout@v3
+        with:
+          repository: zatto-lab/argo-manifest
+          token: ${{ secrets.GH_PAT }}
+          path: argo-manifest
+
+      - name: Update manifest with new image tag
+        run: |
+          sed -i "s|image: harbor.zatto-lab.cloud/napi/napi:.*|image: harbor.zatto-lab.cloud/napi/napi:${TAG}|" argo-manifest/apps/napi/deployment.yaml
+
+      - name: Commit and push update to argo-manifest
+        run: |
+          cd argo-manifest
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git commit -am "ci: update napi image to tag ${TAG}"
+          git push
