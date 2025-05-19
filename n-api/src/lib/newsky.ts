@@ -1,22 +1,34 @@
-const BASE_URL = "https://newsky.app/api/airline-api"
+// src/lib/newsky.ts
 
-export async function fetchRecentFlights({ count = 5 }: { count?: number }) {
-  const apiKey = process.env.NEWSKY_API_KEY
-  if (!apiKey) throw new Error("Missing Newsky API key")
+export type FetchFlightsOptions = {
+  count?: number;
+  skip?: number;
+};
 
-  const res = await fetch(`${BASE_URL}/flights/recent`, {
+export async function fetchRecentFlights({ count = 100, skip = 0 }: FetchFlightsOptions) {
+  const apiKey = process.env.NEWSKY_API_KEY;
+  if (!apiKey) throw new Error("Missing Newsky API key");
+
+  const body = {
+    count,
+    skip,
+    includeDeleted: false
+  };
+
+  const res = await fetch("https://newsky.app/api/airline-api/flights/recent", {
     method: "POST",
     headers: {
-      "Authorization": `Bearer ${apiKey}`,
+      Authorization: `Bearer ${apiKey}`,
       "Content-Type": "application/json"
     },
-    body: JSON.stringify({
-      count,
-      skip: 0,
-      includeDeleted: false
-    })
-  })
+    body: JSON.stringify(body)
+  });
 
-  if (!res.ok) throw new Error(`Newsky API error: ${res.status}`)
-  return res.json()
+  if (!res.ok) {
+    const errorText = await res.text();
+    console.error("Newsky API response:", errorText);
+    throw new Error(`Newsky API error: ${res.status}`);
+  }
+
+  return res.json();
 }
