@@ -14,10 +14,12 @@ export default function FullSyncPage() {
   const [endDate, setEndDate] = useState<string>(format(new Date(), "yyyy-MM-dd"));
   const intervalRef = useRef<NodeJS.Timeout | null>(null);
 
+  const API_BASE = process.env.NEXT_PUBLIC_API_BASE ?? "";
+
   const fetchLogs = async () => {
     try {
       // Krok 1: pobierz nazwę najnowszego pliku loga
-      const latestRes = await fetch("/api/fetcher/latestLog");
+      const latestRes = await fetch(`${API_BASE}/api/fetcher/latestLog`);
       if (!latestRes.ok) {
         setLogs("Brak dostępnych logów.");
         return;
@@ -25,7 +27,7 @@ export default function FullSyncPage() {
       const latestFileName = await latestRes.text();
 
       // Krok 2: pobierz zawartość tego pliku
-      const logsRes = await fetch(`/api/fetcher/logs?file=${encodeURIComponent(latestFileName)}`);
+      const logsRes = await fetch(`${API_BASE}/api/fetcher/logs?file=${encodeURIComponent(latestFileName)}`);
       if (!logsRes.ok) {
         setLogs("Nie udało się pobrać logów.");
         return;
@@ -38,8 +40,13 @@ export default function FullSyncPage() {
   };
 
   const fetchCount = async () => {
-    const res = await fetch("/api/flights/count").then((r) => r.json());
-    setInitialCount(res.count ?? 0);
+    try {
+      const res = await fetch(`${API_BASE}/api/flights/count`);
+      const json = await res.json();
+      setInitialCount(json.count ?? 0);
+    } catch {
+      setInitialCount(null);
+    }
   };
 
   async function runFullSync() {
@@ -50,17 +57,22 @@ export default function FullSyncPage() {
 
     intervalRef.current = setInterval(fetchLogs, 5000);
 
-    const res = await fetch("/api/sync", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ startDate, endDate }),
-    });
+    try {
+      const res = await fetch(`${API_BASE}/api/sync`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ startDate, endDate }),
+      });
 
-    const json = await res.json();
-    setInserted(json.inserted ?? 0);
-    setRunning(false);
-    if (intervalRef.current) clearInterval(intervalRef.current);
-    await fetchLogs();
+      const json = await res.json();
+      setInserted(json.inserted ?? 0);
+    } catch {
+      setLogs((prev) => prev + "\n❌ Błąd podczas synchronizacji.");
+    } finally {
+      setRunning(false);
+      if (intervalRef.current) clearInterval(intervalRef.current);
+      await fetchLogs();
+    }
   }
 
   const stopSync = () => {
