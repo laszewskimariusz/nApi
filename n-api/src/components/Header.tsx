@@ -15,6 +15,9 @@ export default function Header() {
           <NavigationMenuItem>
             <Link href="/dashboard/autofetcher" className="hover:underline text-sm">Auto Fetcher</Link>
           </NavigationMenuItem>
+          <NavigationMenuItem>
+            <Link href="/dashboard/fullSync" className="hover:underline text-sm">Full Sync</Link>
+          </NavigationMenuItem>
         </NavigationMenuList>
       </NavigationMenu>
     </header>
