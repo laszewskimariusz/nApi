@@ -34,11 +34,11 @@ jobs:
             --load \
             --build-arg MONGODB_URI="${{ secrets.MONGODB_URI }}" \
             --build-arg NEWSKY_API_KEY="${{ secrets.NEWSKY_API_KEY }}" \
+            --build-arg RESEND_API_KEY="${{ secrets.RESEND_API_KEY }}" \
             -t harbor.zatto-lab.cloud/napi/napi:${{ env.TAG }} \
             .
           docker push harbor.zatto-lab.cloud/napi/napi:${{ env.TAG }}
 
-      # ➕ NOWOŚĆ: ustawienie kubeconfig + secret
       - name: Set up kubeconfig
         run: |
           echo "${{ secrets.KUBECONFIG }}" > kubeconfig.yaml
@@ -53,6 +53,7 @@ jobs:
           kubectl create secret generic napi-secrets \
             --from-literal=MONGODB_URI="${{ secrets.MONGODB_URI }}" \
             --from-literal=NEWSKY_API_KEY="${{ secrets.NEWSKY_API_KEY }}" \
+            --from-literal=RESEND_API_KEY="${{ secrets.RESEND_API_KEY }}" \
             -n napi
 
       - name: Checkout argo-manifest repo
