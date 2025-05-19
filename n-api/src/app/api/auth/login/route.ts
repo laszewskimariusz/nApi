@@ -1,4 +1,3 @@
-// src/app/api/auth/login/route.ts
 import { NextRequest, NextResponse } from "next/server";
 import { MongoClient } from "mongodb";
 import { cookies } from "next/headers";
@@ -29,7 +28,13 @@ export async function POST(req: NextRequest) {
     }
 
     const cookieStore = cookies();
-    (await cookieStore).set("session", email, { httpOnly: true });
+    (await cookieStore).set("session", email, {
+      httpOnly: true,
+      secure: true,
+      path: "/",
+      domain: ".topsky.app",  // upewnij się, że ta domena jest prawidłowa dla twojej produkcji
+      sameSite: "lax",
+    });
 
     return NextResponse.json({ ok: true });
   } catch (err: any) {
