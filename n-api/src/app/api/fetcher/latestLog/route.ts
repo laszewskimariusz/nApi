@@ -8,10 +8,8 @@ export async function GET() {
     return new Response(JSON.stringify({ error: "Log file not found" }), { status: 404 });
   }
 
-  const content = fs.readFileSync(LOG_FILE, "utf-8");
-
   return new Response(
-    JSON.stringify({ content }),
+    JSON.stringify({ file: "sync.log" }),
     { headers: { "Content-Type": "application/json" } }
   );
 }

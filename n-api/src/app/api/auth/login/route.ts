@@ -29,7 +29,7 @@ export async function POST(req: NextRequest) {
     }
 
     const cookieStore = cookies();
-    cookieStore.set("session", email, { httpOnly: true });
+    (await cookieStore).set("session", email, { httpOnly: true });
 
     return NextResponse.json({ ok: true });
   } catch (err: any) {

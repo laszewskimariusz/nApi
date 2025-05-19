@@ -1,5 +1,3 @@
-// src/lib/newsky.ts
-
 export type FetchFlightsOptions = {
   count?: number;
   skip?: number;
@@ -12,16 +10,16 @@ export async function fetchRecentFlights({ count = 100, skip = 0 }: FetchFlights
   const body = {
     count,
     skip,
-    includeDeleted: false
+    includeDeleted: false,
   };
 
   const res = await fetch("https://newsky.app/api/airline-api/flights/recent", {
     method: "POST",
     headers: {
       Authorization: `Bearer ${apiKey}`,
-      "Content-Type": "application/json"
+      "Content-Type": "application/json",
     },
-    body: JSON.stringify(body)
+    body: JSON.stringify(body),
   });
 
   if (!res.ok) {
@@ -32,6 +30,8 @@ export async function fetchRecentFlights({ count = 100, skip = 0 }: FetchFlights
 
   return res.json();
 }
+
+
 
 export async function fetchFlightsByDate(start: Date, end: Date, skip = 0) {
   const apiKey = process.env.NEWSKY_API_KEY;
@@ -56,9 +56,12 @@ export async function fetchFlightsByDate(start: Date, end: Date, skip = 0) {
 
   if (!res.ok) {
     const errorText = await res.text();
-    console.error("Newsky API response:", errorText);
+    console.error("Newsky API response error:", errorText);
     throw new Error(`Newsky API error: ${res.status}`);
   }
 
-  return res.json();
+  const json = await res.json();
+  console.log("Newsky API response JSON:", json);
+  return json; // musi zawierać pole 'results'
 }
+

@@ -4,12 +4,14 @@ import { NavigationMenu, NavigationMenuItem, NavigationMenuList } from "@/compon
 
 export default async function Header() {
   const cookieStore = cookies();
-  const session = cookieStore.get("session");
+  const session = (await cookieStore).get("session");
   const loggedIn = Boolean(session?.value);
 
   return (
     <header className="w-full p-4 border-b border-border flex justify-between items-center">
-      <h1 className="text-lg font-bold tracking-tight">nApi</h1>
+      <Link href="/dashboard" className="text-lg font-bold tracking-tight hover:underline">
+        nApi
+      </Link>
       {loggedIn && (
         <NavigationMenu>
           <NavigationMenuList className="gap-4">

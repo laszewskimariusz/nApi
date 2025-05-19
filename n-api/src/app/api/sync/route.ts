@@ -1,13 +1,13 @@
-// src/app/api/sync/route.ts
-import { NextResponse } from "next/server";
-import { runFullSync } from "@/lib/sync";
+import { runFullSync } from '@/lib/sync';
 
-export async function POST() {
-  try {
-    const result = await runFullSync();
-    return NextResponse.json(result);
-  } catch (error: any) {
-    console.error("Sync failed:", error);
-    return NextResponse.json({ error: error.message }, { status: 500 });
-  }
+export async function POST(request: Request) {
+  // opcjonalnie możesz odczytać parametry z body requestu
+  const { startDate, endDate } = await request.json().catch(() => ({}));
+  
+  const result = await runFullSync(startDate, endDate);
+
+  return new Response(JSON.stringify(result), {
+    status: 200,
+    headers: { 'Content-Type': 'application/json' },
+  });
 }

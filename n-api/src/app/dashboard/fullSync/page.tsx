@@ -1,4 +1,3 @@
-// src/app/dashboard/fullSync/page.tsx
 "use client";
 
 import { useEffect, useState, useRef } from "react";
@@ -16,8 +15,26 @@ export default function FullSyncPage() {
   const intervalRef = useRef<NodeJS.Timeout | null>(null);
 
   const fetchLogs = async () => {
-    const res = await fetch("/api/fetcher/logs?file=sync").then((r) => r.text());
-    setLogs(res);
+    try {
+      // Krok 1: pobierz nazwę najnowszego pliku loga
+      const latestRes = await fetch("/api/fetcher/latestLog");
+      if (!latestRes.ok) {
+        setLogs("Brak dostępnych logów.");
+        return;
+      }
+      const latestFileName = await latestRes.text();
+
+      // Krok 2: pobierz zawartość tego pliku
+      const logsRes = await fetch(`/api/fetcher/logs?file=${encodeURIComponent(latestFileName)}`);
+      if (!logsRes.ok) {
+        setLogs("Nie udało się pobrać logów.");
+        return;
+      }
+      const logsText = await logsRes.text();
+      setLogs(logsText);
+    } catch {
+      setLogs("Błąd podczas pobierania logów.");
+    }
   };
 
   const fetchCount = async () => {
@@ -36,19 +53,19 @@ export default function FullSyncPage() {
     const res = await fetch("/api/sync", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ startDate, endDate })
+      body: JSON.stringify({ startDate, endDate }),
     });
 
     const json = await res.json();
     setInserted(json.inserted ?? 0);
     setRunning(false);
-    clearInterval(intervalRef.current!);
+    if (intervalRef.current) clearInterval(intervalRef.current);
     await fetchLogs();
   }
 
   const stopSync = () => {
     setRunning(false);
-    clearInterval(intervalRef.current!);
+    if (intervalRef.current) clearInterval(intervalRef.current);
     setLogs((prev) => prev + "\n❌ Synchronizacja przerwana.");
   };
 
@@ -92,9 +109,26 @@ export default function FullSyncPage() {
         )}
       </div>
 
-      <pre className="bg-black text-white p-4 rounded max-h-[480px] overflow-y-scroll text-sm whitespace-pre-wrap">
-        {logs || "Brak logów"}
-      </pre>
+      <div
+        className="bg-black text-white p-4 rounded max-h-[480px] overflow-y-scroll text-sm font-mono whitespace-pre-wrap"
+        style={{ whiteSpace: "pre-wrap" }}
+      >
+        {logs
+          .split("\n")
+          .slice(-30)
+          .map((line, i) => {
+            let colorClass = "";
+            if (line.includes("❌")) colorClass = "text-red-400";
+            else if (line.includes("✅")) colorClass = "text-green-400";
+            else if (line.includes("⏳")) colorClass = "text-yellow-400";
+
+            return (
+              <div key={i} className={colorClass}>
+                {line}
+              </div>
+            );
+          })}
+      </div>
     </main>
   );
 }
