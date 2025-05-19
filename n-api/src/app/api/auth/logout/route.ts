@@ -2,10 +2,9 @@
 import { NextResponse } from "next/server";
 
 export async function GET(req: Request) {
-  const url = new URL(req.url);
-  const origin = url.origin; // np. https://localhost:3000 lub https://twoja-domena.app
+  const redirectUrl = "https://napi.topsky.app/login";
 
-  const response = NextResponse.redirect(`${origin}/login`);
+  const response = NextResponse.redirect(redirectUrl);
   response.cookies.set("session", "", { maxAge: 0, path: "/" });
   return response;
 }
