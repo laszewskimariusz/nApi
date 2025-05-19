@@ -12,9 +12,11 @@ COPY . .
 # Te zmienne będą dostępne w czasie budowania aplikacji (np. do getStaticProps lub env-based configów)
 ARG MONGODB_URI
 ARG NEWSKY_API_KEY
+ARG RESEND_API_KEY
 
 ENV MONGODB_URI=$MONGODB_URI
 ENV NEWSKY_API_KEY=$NEWSKY_API_KEY
+ENV RESEND_API_KEY=$RESEND_API_KEY
 
 RUN npm run build
 
@@ -25,6 +27,7 @@ WORKDIR /app
 ENV NODE_ENV=production
 ENV MONGODB_URI=$MONGODB_URI
 ENV NEWSKY_API_KEY=$NEWSKY_API_KEY
+ENV RESEND_API_KEY=$RESEND_API_KEY
 
 COPY --from=builder /app ./
 
