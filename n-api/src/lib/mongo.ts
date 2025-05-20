@@ -1,3 +1,4 @@
+// lib/mongo.ts
 import { MongoClient } from "mongodb";
 
 const uri = process.env.MONGODB_URI!;
@@ -17,3 +18,9 @@ if (!global._mongoClientPromise) {
 clientPromise = global._mongoClientPromise;
 
 export default clientPromise;
+
+// ✅ Dodajemy tę funkcję:
+export async function connectToDB() {
+  const client = await clientPromise;
+  return client.db(); // możesz dodać tu nazwę db jeśli chcesz
+}

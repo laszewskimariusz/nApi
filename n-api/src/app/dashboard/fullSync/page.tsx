@@ -18,24 +18,26 @@ export default function FullSyncPage() {
 
   const fetchLogs = async () => {
     try {
-      // Krok 1: pobierz nazwę najnowszego pliku loga
-      const latestRes = await fetch(`${API_BASE}/api/fetcher/latestLog`);
-      if (!latestRes.ok) {
-        setLogs("Brak dostępnych logów.");
-        return;
-      }
-      const latestFileName = await latestRes.text();
-
-      // Krok 2: pobierz zawartość tego pliku
-      const logsRes = await fetch(`${API_BASE}/api/fetcher/logs?file=${encodeURIComponent(latestFileName)}`);
-      if (!logsRes.ok) {
+      const res = await fetch(`${API_BASE}/api/fetcher/logs`);
+      if (!res.ok) {
         setLogs("Nie udało się pobrać logów.");
         return;
       }
-      const logsText = await logsRes.text();
-      setLogs(logsText);
+
+      const json = await res.json();
+
+      if (!json.logs || json.logs.length === 0) {
+        setLogs("Brak dostępnych logów.");
+        return;
+      }
+
+      const logText = json.logs
+        .map((log: any) => `[${new Date(log.timestamp).toLocaleString()}] ${log.message}`)
+        .join("\n");
+
+      setLogs(logText);
     } catch {
-      setLogs("Błąd podczas pobierania logów.");
+      setLogs("❌ Błąd podczas pobierania logów.");
     }
   };
 

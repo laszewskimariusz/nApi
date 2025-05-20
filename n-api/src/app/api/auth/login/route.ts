@@ -27,13 +27,15 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "Invalid credentials" }, { status: 401 });
     }
 
+    const isDev = process.env.NODE_ENV !== "production";
     const cookieStore = cookies();
+
     (await cookieStore).set("session", email, {
       httpOnly: true,
-      secure: true,
+      secure: !isDev,
       path: "/",
-      domain: ".topsky.app",  // upewnij się, że ta domena jest prawidłowa dla twojej produkcji
       sameSite: "lax",
+      ...(isDev ? {} : { domain: ".topsky.app" }),
     });
 
     return NextResponse.json({ ok: true });
