@@ -28,7 +28,34 @@ type Flight = {
   aircraft: string;
   date: string;
   isVatsim: boolean;
+  networkRatio?: number;
+  networkPings?: number;
 };
+
+// Komponent do wyświetlania oznaczenia VATSIM z dodatkowymi informacjami
+function VatsimBadge({ flight }: { flight: Flight }) {
+  if (!flight.isVatsim) {
+    return <Badge variant="outline">Offline</Badge>;
+  }
+  
+  // Jeśli jest to lot VATSIM, pokaż dodatkowe informacje jeśli są dostępne
+  return (
+    <div className="flex flex-col items-start gap-1">
+      <Badge className="bg-blue-500">VATSIM</Badge>
+      
+      {(flight.networkPings !== undefined || flight.networkRatio !== undefined) && (
+        <span className="text-xs text-gray-500">
+          {flight.networkPings !== undefined && (
+            <>Pings: {flight.networkPings}{" "}</>
+          )}
+          {flight.networkRatio !== undefined && (
+            <>Ratio: {(flight.networkRatio * 100).toFixed(1)}%</>
+          )}
+        </span>
+      )}
+    </div>
+  );
+}
 
 export default function FlightsDashboard() {
   const [stats, setStats] = useState<any>(null);
@@ -139,11 +166,7 @@ export default function FlightsDashboard() {
                                 <TableCell>{flight.pilot}</TableCell>
                                 <TableCell>{formatDate(flight.date)}</TableCell>
                                 <TableCell>
-                                  {flight.isVatsim ? (
-                                    <Badge className="bg-blue-500">VATSIM</Badge>
-                                  ) : (
-                                    <Badge variant="outline">Offline</Badge>
-                                  )}
+                                  <VatsimBadge flight={flight} />
                                 </TableCell>
                               </TableRow>
                             ))}

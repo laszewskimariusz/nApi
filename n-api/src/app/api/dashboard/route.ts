@@ -1,6 +1,9 @@
 import { NextResponse } from "next/server";
 import clientPromise from "@/lib/mongo";
 
+// Minimalny próg ratio dla uznania lotu za VATSIM
+const MIN_VATSIM_RATIO = 0.1; // 10%
+
 export async function GET() {
   const client = await clientPromise;
   const db = client.db();
@@ -11,8 +14,13 @@ export async function GET() {
 
   // Wszystkie loty VATSIM
   const totalVatsimFlights = await flightsCol.countDocuments({
-    "network.name": "vatsim",
-    "network.ratio": { $gte: 0.999 },
+    $or: [
+      { isVatsim: true },
+      { 
+        "network.name": "vatsim",
+        "network.ratio": { $gte: MIN_VATSIM_RATIO }
+      }
+    ]
   });
 
   // Pobierz więcej lotów (do 1000) aby zapewnić lepsze pokrycie 30 dni
@@ -33,24 +41,35 @@ export async function GET() {
       createdAt: 1,
       "ofp.close": 1,
       "network.name": 1,
-      "network.ratio": 1
+      "network.ratio": 1,
+      "network.pings": 1,
+      isVatsim: 1
     })
     .toArray();
 
   console.log(`Pobrano ${latestFlights.length} ostatnich lotów`);
 
   // Przetwarzamy dane lotów
-  const processedFlights = latestFlights.map(flight => ({
-    id: flight._id,
-    flightNumber: flight.flightNumber || flight.callsign || "N/A",
-    dep: flight.dep?.icao || "???",
-    arr: flight.arr?.icao || "???",
-    pilot: flight.pilot?.fullname || "Unknown",
-    airline: flight.airline?.shortname || "N/A",
-    aircraft: flight.aircraft?.airframe?.name || flight.aircraft?.name || flight.airframe?.name || "N/A",
-    date: flight.ofp?.close || flight.createdAt,
-    isVatsim: flight.network?.name === "vatsim" && flight.network?.ratio >= 0.999
-  }));
+  const processedFlights = latestFlights.map(flight => {
+    // Sprawdzamy, czy to lot VATSIM
+    const isVatsimFlight = flight.isVatsim || 
+      (flight.network?.name === "vatsim" && 
+       (flight.network?.ratio === undefined || flight.network.ratio >= MIN_VATSIM_RATIO));
+    
+    return {
+      id: flight._id,
+      flightNumber: flight.flightNumber || flight.callsign || "N/A",
+      dep: flight.dep?.icao || "???",
+      arr: flight.arr?.icao || "???",
+      pilot: flight.pilot?.fullname || "Unknown",
+      airline: flight.airline?.shortname || "N/A",
+      aircraft: flight.aircraft?.airframe?.name || flight.aircraft?.name || flight.airframe?.name || "N/A",
+      date: flight.ofp?.close || flight.createdAt,
+      isVatsim: isVatsimFlight,
+      networkRatio: flight.network?.ratio,
+      networkPings: flight.network?.pings
+    };
+  });
 
   // Grupujemy loty po dniach
   const flightsByDay: Record<string, { total: number; vatsim: number }> = {};

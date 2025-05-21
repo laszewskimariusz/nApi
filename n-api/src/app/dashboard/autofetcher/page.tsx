@@ -5,6 +5,7 @@ import { useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/lib/auth-context";
 import AutoFetcher from "@/components/AutoFetcher";
+import RecentFlights from "@/components/RecentFlights";
 
 export default function AutoFetcherPage() {
   const { isLoggedIn, isLoading } = useAuth();
@@ -36,6 +37,8 @@ export default function AutoFetcherPage() {
         Enter your API key below to start the automatic fetching process.
       </p>
       <AutoFetcher />
+      
+      <RecentFlights />
     </div>
   );
 }
