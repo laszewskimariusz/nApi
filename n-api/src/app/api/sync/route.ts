@@ -1,59 +1,21 @@
-import { NextRequest, NextResponse } from "next/server";
-import { logMessage } from "@/lib/logger";
-import { connectToDB } from "@/lib/mongo";
+// n-api/src/app/api/sync/route.ts
 
-// przykładowa funkcja — dostosuj do siebie
-async function fetchFlightsForDay(date: string): Promise<any[]> {
-  // tu np. zapytanie do Newsky API z daną datą
-  return []; // przykładowo pusto
-}
+import { runFullSync } from '@/lib/sync';
 
-export async function POST(req: NextRequest) {
-  const { startDate, endDate } = await req.json();
+export async function POST(request: Request) {
+  try {
+    const { startDate = '2022-11-18', endDate = '2022-11-20' } = await request.json().catch(() => ({}));
 
-  if (!startDate || !endDate) {
-    return NextResponse.json({ error: "Missing date range" }, { status: 400 });
+    const result = await runFullSync(startDate, endDate);
+
+    return new Response(JSON.stringify(result), {
+      status: 200,
+      headers: { 'Content-Type': 'application/json' },
+    });
+  } catch (error: any) {
+    return new Response(JSON.stringify({ error: error.message }), {
+      status: 500,
+      headers: { 'Content-Type': 'application/json' },
+    });
   }
-
-  await logMessage("sync", `🚀 Rozpoczęto pełną synchronizację: ${startDate} → ${endDate}`);
-
-  const db = await connectToDB();
-  const collection = db.collection("flights");
-
-  let inserted = 0;
-  const start = new Date(startDate);
-  const end = new Date(endDate);
-
-  for (
-    let current = new Date(start);
-    current <= end;
-    current.setDate(current.getDate() + 1)
-  ) {
-    const dateStr = current.toISOString().split("T")[0];
-
-    await logMessage("sync", `⏳ Syncing: ${dateStr}`);
-
-    const flights = await fetchFlightsForDay(dateStr);
-
-    await logMessage("sync", `🔍 Newsky API zwróciło: ${flights.length} wyników`);
-
-    if (flights.length === 0) {
-      await logMessage("sync", `⛔ Brak lotów dla ${dateStr}`);
-      continue;
-    }
-
-    for (const flight of flights) {
-      const exists = await collection.findOne({ flightId: flight.flightId });
-      if (!exists) {
-        await collection.insertOne(flight);
-        inserted++;
-      }
-    }
-
-    await logMessage("sync", `✅ Zapisano ${inserted} lotów do ${dateStr}`);
-  }
-
-  await logMessage("sync", `🎉 Synchronizacja zakończona. Nowych rekordów: ${inserted}`);
-
-  return NextResponse.json({ inserted });
 }

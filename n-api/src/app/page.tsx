@@ -3,12 +3,11 @@
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { Card, CardContent } from "@/components/ui/card";
-import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import LoginForm from "@/components/LoginForm";
-import RegisterForm from "@/components/RegisterForm";
+import Image from "next/image";
+
 
 export default function HomePage() {
-  const [tab, setTab] = useState("login");
   const router = useRouter();
   const [checkingSession, setCheckingSession] = useState(true);
 
@@ -30,19 +29,10 @@ export default function HomePage() {
   return (
     <main className="flex items-center justify-center min-h-screen p-4 bg-background">
       <Card className="w-full max-w-md">
-        <CardContent className="p-6">
-          <Tabs value={tab} onValueChange={setTab} className="w-full">
-            <TabsList className="grid w-full grid-cols-2 mb-4">
-              <TabsTrigger value="login">Logowanie</TabsTrigger>
-              <TabsTrigger value="register">Rejestracja</TabsTrigger>
-            </TabsList>
-            <TabsContent value="login">
-              <LoginForm />
-            </TabsContent>
-            <TabsContent value="register">
-              <RegisterForm />
-            </TabsContent>
-          </Tabs>
+        <CardContent className="p-6 flex flex-col items-center justify-center gap-4">
+          <Image src="/napi.png" alt="nApi logo" width={72} height={72} className="mb-2 rounded-full" />
+          <h2 className="text-2xl font-semibold mb-2">Login</h2>
+          <LoginForm />
         </CardContent>
       </Card>
     </main>

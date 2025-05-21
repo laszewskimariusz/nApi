@@ -1,147 +1,111 @@
 "use client";
 
-import { useEffect, useState, useRef } from "react";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { format } from "date-fns";
+import React, { useState } from "react";
 
 export default function FullSyncPage() {
-  const [running, setRunning] = useState(false);
   const [logs, setLogs] = useState<string>("");
-  const [inserted, setInserted] = useState<number>(0);
-  const [initialCount, setInitialCount] = useState<number | null>(null);
-  const [startDate, setStartDate] = useState<string>("2021-08-01");
-  const [endDate, setEndDate] = useState<string>(format(new Date(), "yyyy-MM-dd"));
-  const intervalRef = useRef<NodeJS.Timeout | null>(null);
+  const [flights, setFlights] = useState<any[]>([]);
+  const [startDate, setStartDate] = useState<string>("2022-11-18");
+  const [endDate, setEndDate] = useState<string>("2022-11-20");
 
-  const API_BASE = process.env.NEXT_PUBLIC_API_BASE ?? "";
-
-  const fetchLogs = async () => {
-    try {
-      const res = await fetch(`${API_BASE}/api/fetcher/logs`);
-      if (!res.ok) {
-        setLogs("Nie udało się pobrać logów.");
-        return;
-      }
-
-      const json = await res.json();
-
-      if (!json.logs || json.logs.length === 0) {
-        setLogs("Brak dostępnych logów.");
-        return;
-      }
-
-      const logText = json.logs
-        .map((log: any) => `[${new Date(log.timestamp).toLocaleString()}] ${log.message}`)
-        .join("\n");
-
-      setLogs(logText);
-    } catch {
-      setLogs("❌ Błąd podczas pobierania logów.");
-    }
-  };
-
-  const fetchCount = async () => {
-    try {
-      const res = await fetch(`${API_BASE}/api/flights/count`);
-      const json = await res.json();
-      setInitialCount(json.count ?? 0);
-    } catch {
-      setInitialCount(null);
-    }
-  };
-
-  async function runFullSync() {
-    setRunning(true);
-    setLogs("");
-    setInserted(0);
-    await fetchCount();
-
-    intervalRef.current = setInterval(fetchLogs, 5000);
+  async function fetchFlights() {
+    setLogs((prev) => prev + `⏳ Fetching flights from ${startDate} to ${endDate}...\n`);
 
     try {
-      const res = await fetch(`${API_BASE}/api/sync`, {
+      const res = await fetch("/api/sync", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: {
+          "Content-Type": "application/json",
+        },
         body: JSON.stringify({ startDate, endDate }),
       });
 
-      const json = await res.json();
-      setInserted(json.inserted ?? 0);
-    } catch {
-      setLogs((prev) => prev + "\n❌ Błąd podczas synchronizacji.");
-    } finally {
-      setRunning(false);
-      if (intervalRef.current) clearInterval(intervalRef.current);
-      await fetchLogs();
+      if (!res.ok) {
+        const text = await res.text();
+        setLogs((prev) => prev + `❌ API error: ${text}\n`);
+        setFlights([]);
+        return;
+      }
+
+      const data = await res.json();
+
+      setFlights(data.results ?? []);
+      setLogs((prev) => prev + `✅ Fetched ${data.results?.length ?? 0} flights\n`);
+      console.log("Flights data:", data);
+    } catch (error: any) {
+      setLogs((prev) => prev + `❌ Fetch error: ${error.message}\n`);
+      setFlights([]);
     }
   }
 
-  const stopSync = () => {
-    setRunning(false);
-    if (intervalRef.current) clearInterval(intervalRef.current);
-    setLogs((prev) => prev + "\n❌ Synchronizacja przerwana.");
-  };
-
-  useEffect(() => {
-    fetchLogs();
-  }, []);
-
   return (
     <main className="p-6 space-y-6">
-      <h2 className="text-2xl font-semibold">Pełna synchronizacja danych</h2>
-      <p>Zakres: wybierz przedział dat. System porówna dane z bazy z tymi z API i uzupełni braki.</p>
+      <h2 className="text-2xl font-semibold">Flight Data Fetcher</h2>
 
-      <div className="flex gap-4">
-        <div>
-          <label className="block text-sm text-muted-foreground">Data od:</label>
-          <Input type="date" value={startDate} onChange={(e) => setStartDate(e.target.value)} />
-        </div>
-        <div>
-          <label className="block text-sm text-muted-foreground">Data do:</label>
-          <Input type="date" value={endDate} onChange={(e) => setEndDate(e.target.value)} />
-        </div>
+      <div className="flex space-x-4 items-center">
+        <label>
+          Start date:{" "}
+          <input
+            type="date"
+            value={startDate}
+            onChange={(e) => setStartDate(e.target.value)}
+            className="border rounded px-2 py-1"
+          />
+        </label>
+        <label>
+          End date:{" "}
+          <input
+            type="date"
+            value={endDate}
+            onChange={(e) => setEndDate(e.target.value)}
+            className="border rounded px-2 py-1"
+          />
+        </label>
+        <button
+          onClick={fetchFlights}
+          className="rounded bg-blue-600 px-4 py-2 text-white hover:bg-blue-700"
+        >
+          Fetch flights
+        </button>
       </div>
 
-      <div className="flex gap-4">
-        <Button onClick={runFullSync} disabled={running}>
-          {running ? "Synchronizuj..." : "Uruchom synchronizację"}
-        </Button>
-        {running && (
-          <Button variant="destructive" onClick={stopSync}>
-            Stop
-          </Button>
-        )}
-      </div>
-
-      <div className="text-sm text-muted-foreground">
-        {initialCount !== null && (
-          <p>
-            💾 Rekordy w bazie: {initialCount} <br />
-            ✅ Dodano nowych: {inserted}
-          </p>
-        )}
-      </div>
-
-      <div
-        className="bg-black text-white p-4 rounded max-h-[480px] overflow-y-scroll text-sm font-mono whitespace-pre-wrap"
-        style={{ whiteSpace: "pre-wrap" }}
+      <pre
+        className="bg-black text-white p-4 rounded max-h-[240px] overflow-y-scroll text-sm font-mono whitespace-pre-wrap"
       >
-        {logs
-          .split("\n")
-          .slice(-30)
-          .map((line, i) => {
-            let colorClass = "";
-            if (line.includes("❌")) colorClass = "text-red-400";
-            else if (line.includes("✅")) colorClass = "text-green-400";
-            else if (line.includes("⏳")) colorClass = "text-yellow-400";
+        {logs || "Logs will appear here..."}
+      </pre>
 
-            return (
-              <div key={i} className={colorClass}>
-                {line}
-              </div>
-            );
-          })}
+      <div>
+        <h3 className="text-xl font-semibold mt-6 mb-2">Flights ({flights.length})</h3>
+        {flights.length === 0 && <p>No flights found for selected dates.</p>}
+        {flights.length > 0 && (
+          <table className="w-full border-collapse border border-gray-600 text-left text-sm">
+            <thead>
+              <tr>
+                <th className="border border-gray-600 px-2 py-1">Flight #</th>
+                <th className="border border-gray-600 px-2 py-1">Airline</th>
+                <th className="border border-gray-600 px-2 py-1">Departure</th>
+                <th className="border border-gray-600 px-2 py-1">Arrival</th>
+                <th className="border border-gray-600 px-2 py-1">Dep Time (UTC)</th>
+                <th className="border border-gray-600 px-2 py-1">Duration</th>
+                <th className="border border-gray-600 px-2 py-1">Aircraft</th>
+              </tr>
+            </thead>
+            <tbody>
+              {flights.map((flight) => (
+                <tr key={flight._id}>
+                  <td className="border border-gray-600 px-2 py-1">{flight.flightNumber}</td>
+                  <td className="border border-gray-600 px-2 py-1">{flight.airline?.shortname}</td>
+                  <td className="border border-gray-600 px-2 py-1">{flight.dep?.icao}</td>
+                  <td className="border border-gray-600 px-2 py-1">{flight.arr?.icao}</td>
+                  <td className="border border-gray-600 px-2 py-1">{new Date(flight.depTime).toUTCString()}</td>
+                  <td className="border border-gray-600 px-2 py-1">{Math.floor(flight.duration / 60)}h {flight.duration % 60}m</td>
+                  <td className="border border-gray-600 px-2 py-1">{flight.aircraft?.name}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        )}
       </div>
     </main>
   );
