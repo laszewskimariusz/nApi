@@ -30,16 +30,28 @@ export async function POST(req: NextRequest) {
     const isDev = process.env.NODE_ENV !== "production";
     const cookieStore = cookies();
 
+    // Set secure httpOnly cookie for authentication
     (await cookieStore).set("session", email, {
       httpOnly: true,
-      secure: !isDev,
+      secure: !isDev, // Only use secure in production
       path: "/",
       sameSite: "lax",
-      ...(isDev ? {} : { domain: ".topsky.app" }),
+      // Remove domain settings for local development
     });
 
+    // Set a simple non-httpOnly cookie for frontend login detection
+    // Ensure minimal restrictions for client-side detection
+    (await cookieStore).set("logged_in", "true", {
+      httpOnly: false, // Allow JavaScript access 
+      secure: false, // Allow HTTP access in development
+      path: "/",
+      maxAge: 60 * 60 * 24 * 30, // 30 days in seconds
+    });
+
+    console.log("Login success: Setting cookies");
     return NextResponse.json({ ok: true });
   } catch (err: any) {
+    console.error("Login error:", err);
     return NextResponse.json({ error: err.message }, { status: 500 });
   }
 }

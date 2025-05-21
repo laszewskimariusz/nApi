@@ -3,6 +3,8 @@
 import { useEffect, useState } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { FaChevronDown, FaChevronUp, FaPlaneDeparture, FaMapMarkerAlt } from "react-icons/fa";
+import { useAuth } from "@/lib/auth-context";
+import { useRouter } from "next/navigation";
 
 type Flight = {
   flightNumber?: string;
@@ -18,6 +20,23 @@ export default function Dashboard() {
   const [count, setCount] = useState<number | null>(null);
   const [flights, setFlights] = useState<Flight[]>([]);
   const [expandedIdx, setExpandedIdx] = useState<number | null>(null);
+  const { isLoggedIn, isLoading } = useAuth();
+  const router = useRouter();
+
+  // Ensure authentication
+  useEffect(() => {
+    if (!isLoading && !isLoggedIn) {
+      console.log("Dashboard: User not logged in, redirecting to home");
+      router.replace("/");
+    }
+  }, [isLoggedIn, isLoading, router]);
+
+  // Only load data if logged in
+  useEffect(() => {
+    if (isLoggedIn) {
+      loadData();
+    }
+  }, [isLoggedIn]);
 
   async function loadData() {
     try {
@@ -34,12 +53,18 @@ export default function Dashboard() {
     }
   }
 
-  useEffect(() => {
-    loadData();
-  }, []);
-
   function toggleExpand(idx: number) {
     setExpandedIdx(expandedIdx === idx ? null : idx);
+  }
+
+  // Show loading state
+  if (isLoading) {
+    return <div className="flex items-center justify-center min-h-screen">Loading auth status...</div>;
+  }
+
+  // Don't render anything if not logged in
+  if (!isLoggedIn) {
+    return <div className="flex items-center justify-center min-h-screen">Redirecting to login...</div>;
   }
 
   return (

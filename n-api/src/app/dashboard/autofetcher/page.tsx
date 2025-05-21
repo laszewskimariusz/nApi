@@ -1,50 +1,41 @@
 // src/app/dashboard/autofetcher/page.tsx
 "use client";
 
-import { useEffect, useState } from "react";
-import { Button } from "@/components/ui/button";
+import { useEffect } from "react";
+import { useRouter } from "next/navigation";
+import { useAuth } from "@/lib/auth-context";
+import AutoFetcher from "@/components/AutoFetcher";
 
 export default function AutoFetcherPage() {
-  const [running, setRunning] = useState(false);
-  const [logs, setLogs] = useState("");
-  const [loading, setLoading] = useState(false);
+  const { isLoggedIn, isLoading } = useAuth();
+  const router = useRouter();
 
-  async function fetchStatus() {
-    const res = await fetch("/api/fetcher/status").then((r) => r.json());
-    setRunning(res.running);
-  }
-
-  async function fetchLogs() {
-    const res = await fetch("/api/fetcher/logs").then((r) => r.text());
-    const lines = res.split("\n").slice(-30).join("\n");
-    setLogs(lines);
-  }
-
-  async function toggle(start: boolean) {
-    setLoading(true);
-    await fetch(`/api/fetcher/${start ? "start" : "stop"}`);
-    await fetchStatus();
-    setLoading(false);
-  }
-
+  // Ensure authentication
   useEffect(() => {
-    fetchStatus();
-    fetchLogs();
-    const interval = setInterval(fetchLogs, 10000);
-    return () => clearInterval(interval);
-  }, []);
+    if (!isLoading && !isLoggedIn) {
+      console.log("AutoFetcher page: User not logged in, redirecting to home");
+      router.replace("/");
+    }
+  }, [isLoggedIn, isLoading, router]);
+
+  // Show loading state
+  if (isLoading) {
+    return <div className="flex items-center justify-center min-h-screen">Loading auth status...</div>;
+  }
+
+  // Don't render anything if not logged in
+  if (!isLoggedIn) {
+    return <div className="flex items-center justify-center min-h-screen">Redirecting to login...</div>;
+  }
 
   return (
-    <main className="p-6 space-y-6">
-      <h2 className="text-2xl font-semibold">Auto Fetcher</h2>
-      <div className="flex gap-4 items-center">
-        <Button onClick={() => toggle(true)} disabled={running || loading}>Start</Button>
-        <Button onClick={() => toggle(false)} disabled={!running || loading}>Stop</Button>
-        <span className={running ? "text-green-500" : "text-red-500"}>{running ? "Running" : "Stopped"}</span>
-      </div>
-      <pre className="bg-black text-white p-4 rounded h-[480px] overflow-y-scroll text-sm">
-        {logs || "No logs available."}
-      </pre>
-    </main>
+    <div className="max-w-5xl mx-auto">
+      <h1 className="text-3xl font-bold mb-6">Auto Fetcher</h1>
+      <p className="mb-6 text-gray-600">
+        This tool automatically fetches flight data from the airline API every 10 seconds. 
+        Enter your API key below to start the automatic fetching process.
+      </p>
+      <AutoFetcher />
+    </div>
   );
 }

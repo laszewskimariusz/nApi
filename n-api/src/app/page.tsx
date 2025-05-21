@@ -1,40 +1,44 @@
 "use client";
 
-import { useState, useEffect } from "react";
-import { useRouter } from "next/navigation";
 import { Card, CardContent } from "@/components/ui/card";
 import LoginForm from "@/components/LoginForm";
 import Image from "next/image";
-
+import { useAuth } from "@/lib/auth-context";
+import { useRouter } from "next/navigation";
+import { useEffect } from "react";
 
 export default function HomePage() {
+  const { isLoggedIn, isLoading } = useAuth();
   const router = useRouter();
-  const [checkingSession, setCheckingSession] = useState(true);
 
+  // Only redirect to dashboard if actually logged in and not in loading state
   useEffect(() => {
-    // Sprawdź, czy jest cookie 'session' - proste sprawdzenie klienta
-    const isLoggedIn = document.cookie.includes("session=");
-    if (isLoggedIn) {
+    if (isLoggedIn && !isLoading) {
+      console.log("Home page: User is logged in, redirecting to dashboard");
       router.replace("/dashboard");
-    } else {
-      setCheckingSession(false);
     }
-  }, [router]);
+  }, [isLoggedIn, isLoading, router]);
 
-  if (checkingSession) {
-    // Opcjonalnie: loading lub puste
-    return <div className="flex items-center justify-center min-h-screen">Ładowanie...</div>;
+  // Show loading state
+  if (isLoading) {
+    return <div className="flex items-center justify-center min-h-screen">Loading...</div>;
   }
 
-  return (
-    <main className="flex items-center justify-center min-h-screen p-4 bg-background">
-      <Card className="w-full max-w-md">
-        <CardContent className="p-6 flex flex-col items-center justify-center gap-4">
-          <Image src="/napi.png" alt="nApi logo" width={72} height={72} className="mb-2 rounded-full" />
-          <h2 className="text-2xl font-semibold mb-2">Login</h2>
-          <LoginForm />
-        </CardContent>
-      </Card>
-    </main>
-  );
+  // If not logged in, show login form
+  if (!isLoggedIn) {
+    return (
+      <main className="flex items-center justify-center min-h-screen p-4 bg-background">
+        <Card className="w-full max-w-md">
+          <CardContent className="p-6 flex flex-col items-center justify-center gap-4">
+            <Image src="/napi.png" alt="nApi logo" width={72} height={72} className="mb-2 rounded-full" />
+            <h2 className="text-2xl font-semibold mb-2">Login</h2>
+            <LoginForm />
+          </CardContent>
+        </Card>
+      </main>
+    );
+  }
+
+  // This shouldn't be rendered, but just in case
+  return <div className="flex items-center justify-center min-h-screen">Redirecting to dashboard...</div>;
 }

@@ -2,34 +2,42 @@ import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
 
 const protectedPaths = ["/dashboard", "/dashboard/autofetcher"];
-const publicPaths = ["/flights"]; // Ścieżki publiczne, wyłączone z uwierzytelniania
+const publicPaths = ["/flights"]; // Public paths excluded from authentication
 
 export function middleware(req: NextRequest) {
   const { pathname } = req.nextUrl;
 
-  // Jeśli ścieżka jest w publicznych, pozwól na dostęp bez uwierzytelniania
+  // If the path is public, allow access without authentication
   if (publicPaths.some(path => pathname.startsWith(path))) {
     return NextResponse.next();
   }
 
-  // Sprawdź, czy ścieżka wymaga uwierzytelnienia
+  // Check if the path requires authentication
   if (protectedPaths.some(path => pathname.startsWith(path))) {
-    // Sprawdź cookie sesji
+    // Check for either the httpOnly session cookie or the client-visible logged_in cookie
     const session = req.cookies.get("session");
+    const loggedInCookie = req.cookies.get("logged_in");
+    
+    console.log("Middleware auth check:", { 
+      path: pathname,
+      hasSession: !!session,
+      hasLoggedIn: !!loggedInCookie
+    });
 
-    if (!session) {
-      // Przekieruj na stronę logowania (stronę główną)
+    // If neither cookie is present, redirect to login
+    if (!session && !loggedInCookie) {
+      console.log("Not authenticated, redirecting to home");
       const url = req.nextUrl.clone();
       url.pathname = "/";
       return NextResponse.redirect(url);
     }
   }
 
-  // Pozwól na kontynuację, jeśli jest sesja lub ścieżka nie jest chroniona
+  // Allow continuation if there's a session or the path isn't protected
   return NextResponse.next();
 }
 
-// Definiujemy, dla jakich ścieżek middleware ma działać
+// Define which paths the middleware should run on
 export const config = {
   matcher: ["/dashboard/:path*", "/flights/:path*"],
 };

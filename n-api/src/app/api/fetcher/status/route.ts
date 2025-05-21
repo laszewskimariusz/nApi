@@ -1,6 +1,8 @@
-import { getFetcherStatus } from "@/lib/fetcher";
 import { NextResponse } from "next/server";
+import { getFetcherStatus } from "@/lib/background-fetcher";
 
 export async function GET() {
-  return NextResponse.json({ running: getFetcherStatus() });
+  const status = getFetcherStatus();
+  
+  return NextResponse.json(status);
 }
