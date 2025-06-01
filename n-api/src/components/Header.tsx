@@ -5,10 +5,11 @@ import Image from "next/image";
 import { useAuth } from "@/lib/auth-context";
 import { NavigationMenu, NavigationMenuItem, NavigationMenuList } from "@/components/ui/navigation-menu";
 import ThemeToggle from "@/components/ThemeToggle";
+import { Crown } from "lucide-react";
 
 export default function Header() {
   // Use our authentication context
-  const { isLoggedIn, isLoading, logout } = useAuth();
+  const { isLoggedIn, isLoading, logout, user } = useAuth();
 
   // Handle manual logout
   const handleLogout = () => {
@@ -38,19 +39,56 @@ export default function Header() {
             {/* Debug info */}
             <NavigationMenuItem>
               <span className="text-xs text-gray-500">
-                {isLoading ? "Loading..." : isLoggedIn ? "Logged in" : "Not logged in"}
+                {isLoading ? "Loading..." : isLoggedIn ? `${user?.role || 'user'}` : "Not logged in"}
               </span>
             </NavigationMenuItem>
             
             {/* Don't show any authenticated links while loading to prevent flashing */}
             {!isLoading && isLoggedIn && (
               <>
+                {/* Public links available to all authenticated users */}
                 <NavigationMenuItem>
-                  <Link href="/dashboard" className="hover:underline text-sm">Dashboard</Link>
+                  <Link href="/dashboard" className="hover:underline text-sm">
+                    Dashboard
+                  </Link>
                 </NavigationMenuItem>
+                
                 <NavigationMenuItem>
-                  <Link href="/dashboard/autofetcher" className="hover:underline text-sm">Auto Fetcher</Link>
+                  <Link href="/dashboard/autofetcher" className="hover:underline text-sm">
+                    Auto Fetcher
+                  </Link>
                 </NavigationMenuItem>
+                
+                <NavigationMenuItem>
+                  <Link href="/blog" className="hover:underline text-sm">
+                    Blog
+                  </Link>
+                </NavigationMenuItem>
+
+                {/* Blog Management for bloggers and admins */}
+                {user && (user.role === 'blogger' || user.role === 'admin') && (
+                  <NavigationMenuItem>
+                    <Link
+                      href="/blog/manage"
+                      className="hover:underline text-sm"
+                    >
+                      Manage Blog
+                    </Link>
+                  </NavigationMenuItem>
+                )}
+                
+                {/* Admin Panel Link */}
+                {user && user.role === 'admin' && (
+                  <NavigationMenuItem>
+                    <Link
+                      href="/admin"
+                      className="hover:underline text-sm"
+                    >
+                      Admin
+                    </Link>
+                  </NavigationMenuItem>
+                )}
+                
                 <NavigationMenuItem>
                   <span 
                     onClick={handleLogout} 
