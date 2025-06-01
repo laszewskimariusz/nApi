@@ -15,8 +15,8 @@ export default function Footer() {
 
   return (
     <footer className="w-full text-center text-xs text-muted-foreground py-4 border-t border-border">
-      <p>nApi version <strong>{version}</strong></p>
-      <p className="mt-1">&copy; {new Date().getFullYear()} zatto</p>
+      <p>Topsky.app version <strong>{version}</strong></p>
+      <p className="mt-1">&copy; {new Date().getFullYear()} Topsky.app - Professional Pilot Dashboard</p>
     </footer>
   );
 }

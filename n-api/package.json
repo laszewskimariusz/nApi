@@ -1,6 +1,7 @@
 {
-  "name": "n-api",
+  "name": "topsky-app",
   "version": "0.1.0",
+  "description": "Professional Pilot Dashboard & Aviation Blog - ACARS Data & Flight Tracking",
   "private": true,
   "scripts": {
     "dev": "next dev --turbopack",
